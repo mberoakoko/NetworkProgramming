@@ -85,6 +85,91 @@ namespace velocity_wave {
         };
 
      };
+
+    template<typename T>
+    concept IsValidEndpoint = std::is_same_v<T, sockaddr_in> || std::is_same_v<T, sockaddr_in6>;
+
+    namespace usage {
+        inline auto simple_resolve() -> void {
+            std::string_view host = "google.com";
+            std::string_view port = "443";
+
+            std::cout << "Attempting to resolve " << host << "...\n";
+            auto address_stream = Resolver::resolve(std::string(host), port);
+            bool found { false };
+
+            for (const auto& endpoint : address_stream) {
+                found = true;
+
+                std::cout << "Found potential endpoint " << Resolver::to_string(endpoint) <<"\n";
+            }
+
+            if (! found) {
+                std::cerr << "Could not resolve host, please check your internet connection .\n";
+            }
+
+        };
+
+
+        inline auto stress_test() -> void {
+            // The targets: A mix of local and external
+            const std::vector<std::pair<std::string_view, std::string_view>> targets = {
+                {"google.com", "443"},
+                {"localhost", "8080"},
+                {"beej.us", "80"},
+                {"github.com", "443"}
+            };
+
+            const int num_threads = 100; // Simulating 100 concurrent system requests
+            const int iterations_per_thread = 10;
+
+            std::atomic<size_t> total_resolved{0};
+
+            std::latch start_gate { num_threads };
+            std::vector<std::jthread> workers {};
+            workers.reserve(num_threads);
+
+            auto start_time = std::chrono::high_resolution_clock::now();
+
+
+            for (std::size_t index = 0; index < num_threads ; ++index) {
+                const auto task = [&, index](std::stop_token token) {
+                    while (!token.stop_requested()) {
+                        const auto target = targets[index % targets.size()];
+
+                        start_gate.arrive_and_wait();
+
+                        for (std::size_t j = 0; j < iterations_per_thread; ++j) {
+                            const auto [host_name, port] = target;
+                            auto stream = Resolver::resolve(std::string(host_name), port);
+                            for (const auto endpoint: stream) {
+                                total_resolved.fetch_add(1, std::memory_order::relaxed);
+                            }
+                        }
+                    }
+                };
+                workers.emplace_back(task);
+            }
+
+            start_gate.wait();
+
+            std::cout << "Total workers finished " << workers.size() << "\n";
+
+            auto end_time = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+
+
+            std::cout << "--- Stress Test Results ---\n";
+            std::cout << "Threads: " << num_threads << "\n";
+            std::cout << "Total DNS Resolves: " << total_resolved.load() << "\n";
+            std::cout << "Total Time: " << duration.count() << "ms\n";
+            std::cout << "Avg per resolve: " << (double)duration.count() / (num_threads * iterations_per_thread) << "ms\n";
+
+
+
+
+        }
+    }
 }
 
 #endif //NETWORKPROGRAMMING_IDENTITY_HPP
