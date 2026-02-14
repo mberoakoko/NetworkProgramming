@@ -75,7 +75,7 @@ namespace velocity_wave {
                 using T = std::decay_t<addr_type>;
                 if constexpr (std::is_same<T, sockaddr_in>::value) {
                     inet_ntop(AF_INET, &addr.sin_addr, buffer, sizeof(buffer));
-                } else if constexpr (std::is_same_v<T, sockaddr_in6>>) {
+                } else if constexpr (std::is_same_v<T, sockaddr_in6>) {
                     inet_ntop(AF_INET6, &addr.sin6_addr, buffer, sizeof(buffer));
                 }
 
