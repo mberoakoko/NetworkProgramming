@@ -10,7 +10,8 @@ find_package(Poco REQUIRED COMPONENTS Data DataSQLite Foundation Net NetSSL Util
 add_executable(NetworkProgramming main.cpp
         src/identity.hpp
         src/socket_resource.hpp
-        src/audio_pipeline.hpp)
+        src/audio_pipeline.hpp
+        src/reactor.hpp)
 
 include_directories(
         Poco::Data
