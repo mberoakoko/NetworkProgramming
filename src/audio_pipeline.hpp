@@ -53,6 +53,10 @@ namespace velocity_wave {
         }
     };
 
+    /**
+     * @brief Zero-Copy Stream.
+     * Uses the Linux 'sendfile' system call to bypass user-space memory.
+     */
     template<SocketType Proto>
     static auto stream_to_socket(
         int file_descriptor,
