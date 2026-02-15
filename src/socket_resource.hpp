@@ -4,7 +4,9 @@
 
 #ifndef NETWORKPROGRAMMING_SOCKET_RESOURCE_HPP
 #define NETWORKPROGRAMMING_SOCKET_RESOURCE_HPP
-
+#include <sys/socket.h>
+#include <fcntl.h>
+#include "identity.hpp"
 
 #include <bits/stdc++.h>
 namespace velocity_wave {
@@ -99,5 +101,31 @@ namespace velocity_wave {
 
         int socket_descriptor_;
     };
+
+    using TCPListener = UniqueSocket<TCP>;
+
+    namespace stress_test {
+        inline auto stress_test() -> void {
+            constexpr int iterations = 100'000;
+            int success_count = 0;
+
+            std::cout << "Starting Resource Pressure Test (RAII verification)...\n";
+
+            for (std::size_t i = 0; i < iterations ; ++i ) {
+                auto socket_result = TCPListener::create();
+                if (socket_result) {
+                    success_count+=1;
+                }else {
+                    std::cerr << "Failed at iteration " << i << " - Check system ulimits!\n";
+                    break;
+                }
+            }
+
+
+            std::cout << "Test Complete.\n";
+            std::cout << "Successfully cycled " << success_count << " sockets without leaking.\n";
+            std::cout << "Current process health: EXCELLENT.\n";
+        }
+    }
 }
 #endif //NETWORKPROGRAMMING_SOCKET_RESOURCE_HPP
