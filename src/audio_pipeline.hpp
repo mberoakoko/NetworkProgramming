@@ -71,6 +71,29 @@ namespace velocity_wave {
 
         return static_cast<std::size_t>(sent);
     }
+
+    /**
+     * @brief Modern Buffer View.
+     * If we need to send small metadata (like a JSON status), we use spans.
+     * Beej uses char*, we use std::span<const std::byte>.
+     */
+    template<SocketType Proto>
+    static auto send_metadata(
+        UniqueSocket<Proto> client_socket,
+        std::span<const std::byte> data) -> std::expected<void, NetWorkError> {
+        ssize_t total_sent  = 0; // Functinally out offset
+
+        while (total_sent < data.size()) {
+            auto n = ::send(
+                client_socket.native_handle(),
+                data.data() + total_sent,
+                data.size() - total_sent
+                );
+            if (n == -1){ return std::unexpected(NetWorkError::SytemError); }
+            total_sent += n;
+        }
+        return {};
+    }
 }
 
 #endif //NETWORKPROGRAMMING_AUDIO_PIPELINE_HPP
