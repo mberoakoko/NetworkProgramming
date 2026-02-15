@@ -94,6 +94,29 @@ namespace velocity_wave {
         }
         return {};
     }
+
+
+    template<SocketType Proto>
+    static auto receive_metadata(
+        UniqueSocket<Proto> client_socket,
+        std::span<std::byte> buffer) -> std::expected<void, NetWorkError> {
+        ssize_t total_recieved = 0; // Functionally our offset
+
+        while (total_recieved < buffer.size()) {
+            auto n = ::recv(
+                client_socket.native_handle(),
+                buffer.data() + total_recieved,
+                buffer.size() - total_recieved
+            );
+
+            if (n == 0) { return std::unexpected(NetWorkError::NoAddressFound); }
+            if (n == -1) { return std::unexpected(NetWorkError::SytemError); }
+
+            total_recieved += n;
+        }
+
+        return {};
+    }
 }
 
 #endif //NETWORKPROGRAMMING_AUDIO_PIPELINE_HPP
